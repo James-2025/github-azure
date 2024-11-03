@@ -52,6 +52,8 @@ resource "azurerm_network_security_rule" "ssh" {
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
   network_security_group_name = azurerm_network_security_group.nsg.name
+  resource_group_name         = "my-terraform-rg"  # Add this line
+
 }
 
 
@@ -73,6 +75,8 @@ resource "azurerm_subnet" "subnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
+  network_security_group_id = azurerm_network_security_group.nsg.id
+
 
   depends_on = [azurerm_virtual_network.vnet]
 }
