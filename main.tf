@@ -114,7 +114,7 @@ resource "azurerm_virtual_machine" "vm" {
   vm_size               = "Standard_D2s_v3"
 
   storage_os_disk {
-    name              = "${var.vm_name}-osdisk"
+    name              = "${var.vm_name}-osdisk01"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
