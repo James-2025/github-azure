@@ -13,6 +13,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+
+    - name: Set up SSH key
+      env:
+        SSH_KEY: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
+      run: |
+        mkdir -p ~/.ssh
+        echo "$SSH_KEY" > ~/.ssh/2024.pem
+        chmod 600 ~/.ssh/2024.pem  
+    
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
@@ -37,11 +46,8 @@ jobs:
       run: terraform init
 
     - name: Plan Terraform deployment
-      env:
-        TF_VAR_azure_ssh_private_key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}  # Reference the GitHub secret
-
       run: 
-        terraform plan -out tfplan -lock=false -var "azure_ssh_private_key=${{ secrets.AZURE_SSH_PRIVATE_KEY }}"
+        terraform plan -out tfplan -lock=false 
 
     - name: Apply Terraform deployment
       run: terraform apply -auto-approve -lock=false

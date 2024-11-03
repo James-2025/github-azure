@@ -18,11 +18,11 @@
  # default = "champions-bucket"
 #}
 
-#variable "private_key_path" {
-#  description = "The path to the SSH private key file used for provisioning."
-#  type        = string
-#  default = "~/.ssh/2024.pem"
-#}
+variable "private_key_path" {
+  description = "The path to the SSH private key file used for provisioning."
+  type        = string
+  default = "~/.ssh/2024.pem"
+}
 
 #variable "name" {
 #  description = "Name of EC2 Intance"
