@@ -38,7 +38,8 @@ jobs:
 
     - name: Import existing resource group
       run: terraform import azurerm_resource_group.rg /subscriptions/71746fc8-d31b-44dd-8ff5-7b8f5cd8b9e2/resourceGroups/my-terraform-rg || true
-  
+      run: terraform import azurerm_virtual_network.vnet /subscriptions/71746fc8-d31b-44dd-8ff5-7b8f5cd8b9e2/resourceGroups/my-terraform-rg/providers/Microsoft.Network/virtualNetworks/my-terraform-rg-vnet
+
 
     - name: Plan Terraform deployment
       run: terraform plan -out tfplan
