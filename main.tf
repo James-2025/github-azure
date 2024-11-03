@@ -16,7 +16,7 @@ variable "resource_group_name" {
 }
 
 variable "location" {
-  default = "westasia"
+  default = "westindia"
 }
 
 variable "admin_username" {
