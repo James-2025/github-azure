@@ -34,6 +34,9 @@ jobs:
         echo "ARM_TENANT_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.tenantId')" >> $GITHUB_ENV
 
     - name: Initialize Terraform
+      env:
+          TF_VAR_azure_ssh_private_key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
+
       run: terraform init
 
     - name: Plan Terraform deployment

@@ -11,6 +11,12 @@ provider "azurerm" {
   features {}
 }
 
+variable "azure_ssh_private_key" {
+  type      = string
+  sensitive = true
+}
+
+
 variable "vm_name" {
   default = "my-azure-vm"
 }
@@ -85,4 +91,36 @@ resource "azurerm_linux_virtual_machine" "vm" {
     username   = var.admin_username
     public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjXyNcW5rfXJ3RRTeae+swmAx43KGQPl0aPEHlYoQqLPJP+Ak6oe1mKI0OE5jhcXnix7LtRg+dLiyAqVx5KaV4UyPq+3627irW72KpBLWKpLDOU0wG9N0MvjOWFbqpQ6WJDZFG1W14Drsx0QvKY2FQ0MGC0FzXd3BK3XApRgToU+HJHYwme6JPVDmxhHr4z/Zmweh4TcFKoCk7E8X4o3i1aH0wssBqe0lH575/sk8vCrIvmcIw33Xa/nxdbS7nvWqqKqI/0hCr+mGlw8Y/HO8UnzNNyzaYRFh3TFAULD4uNP7swrVWrKbhXIxi7dVWnkiffIYIJCqJd/h3A/D+hy2Atg4JEImp5X/69Rrhn97d7FrstoPVSlOslhE3Kb4A1XMOSmkdE5Hhd3UbXGs20VtNBNmZPwlmCA709vlCAr3sj5zvUEB478ULnhCAcLxfrjX5TFqCCReFU3xRv4tgKrA6wZG6N0UFqedDo/QI/RQCgmUD8dIH0S7gvcPpfjysoKk= generated-by-azure"
   }
+
+
+  
 }
+
+provisioner "file" {
+  source      = "index.html"
+  destination = "/tmp/index.html"  # Use a temporary directory
+  connection {
+    type        = "ssh"
+    user        = var.admin_username
+    private_key = var.azure_ssh_private_key
+    host        = self.public_ip_address
+  }
+}
+
+provisioner "remote-exec" {
+  inline = [
+    "sudo apt update -y",
+    "sudo apt install -y apache2",
+    "sudo mv /tmp/index.html /var/www/html/index.html",
+    "sudo chown www-data:www-data /var/www/html/index.html",
+    "sudo systemctl start apache2",
+    "sudo systemctl enable apache2"
+  ]
+  connection {
+    type        = "ssh"
+    user        = var.admin_username
+    private_key = var.azure_ssh_private_key
+    host        = self.public_ip_address
+  }
+}
+
