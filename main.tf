@@ -18,7 +18,7 @@ variable "azure_ssh_private_key" {
 
 
 variable "vm_name" {
-  default = "my-azure-vm"
+  default = "my-azure-vm01"
 }
 
 variable "resource_group_name" {
