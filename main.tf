@@ -53,6 +53,13 @@ resource "azurerm_subnet" "subnet" {
   depends_on = [azurerm_virtual_network.vnet]
 }
 
+resource "azurerm_public_ip" "public_ip" {
+  name                = "${var.vm_name}-public-ip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Dynamic"
+}
+
 resource "azurerm_network_interface" "nic" {
   name                = "${var.vm_name}-nic"
   location            = azurerm_resource_group.rg.location
@@ -62,6 +69,7 @@ resource "azurerm_network_interface" "nic" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.public_ip.id  # Associate with public IP
   }
 }
 
@@ -96,10 +104,11 @@ resource "azurerm_virtual_machine" "vm" {
 
     ssh_keys {
       path     = "/home/${var.admin_username}/.ssh/authorized_keys"
-      key_data = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjXyNcW5rfXJ3RRTeae+swmAx43KGQPl0aPEHlYoQqLPJP+Ak6oe1mKI0OE5jhcXnix7LtRg+dLiyAqVx5KaV4UyPq+3627irW72KpBLWKpLDOU0wG9N0MvjOWFbqpQ6WJDZFG1W14Drsx0QvKY2FQ0MGC0FzXd3BK3XApRgToU+HJHYwme6JPVDmxhHr4z/Zmweh4TcFKoCk7E8X4o3i1aH0wssBqe0lH575/sk8vCrIvmcIw33Xa/nxdbS7nvWqqKqI/0hCr+mGlw8Y/HO8UnzNNyzaYRFh3TFAULD4uNP7swrVWrKbhXIxi7dVWnkiffIYIJCqJd/h3A/D+hy2Atg4JEImp5X/69Rrhn97d7FrstoPVSlOslhE3Kb4A1XMOSmkdE5Hhd3UbXGs20VtNBNmZPwlmCA709vlCAr3sj5zvUEB478ULnhCAcLxfrjX5TFqCCReFU3xRv4tgKrA6wZG6N0UFqedDo/QI/RQCgmUD8dIH0S7gvcPpfjysoKk= generated-by-azure"
+      key_data = var.azure_ssh_private_key  # Use the variable for the SSH key
     }
   }
 
+  # The provisioners will now reference the public IP address directly
   provisioner "file" {
     source      = "index.html"
     destination = "/tmp/index.html"
@@ -107,7 +116,7 @@ resource "azurerm_virtual_machine" "vm" {
       type        = "ssh"
       user        = var.admin_username
       private_key = var.azure_ssh_private_key
-      host        = self.public_ip_address
+      host        = azurerm_public_ip.public_ip.ip_address  # Reference the public IP
     }
   }
 
@@ -124,7 +133,7 @@ resource "azurerm_virtual_machine" "vm" {
       type        = "ssh"
       user        = var.admin_username
       private_key = var.azure_ssh_private_key
-      host        = self.public_ip_address
+      host        = azurerm_public_ip.public_ip.ip_address  # Reference the public IP
     }
   }
 }
