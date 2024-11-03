@@ -1,9 +1,9 @@
 terraform {
   backend "azurerm" {
-    resource_group_name   = "terraform-backend"       # Update to your backend resource group
-    storage_account_name  = "backend01"            # Update to your backend storage account name
-    container_name        = "tfstate"                       # Update to your backend container name
-    key                   = "terraform.tfstate"             # Name of the state file
+    resource_group_name   = "terraform-backend"
+    storage_account_name  = "backend01"
+    container_name        = "tfstate"
+    key                   = "terraform.tfstate"
   }
 }
 
@@ -15,7 +15,6 @@ variable "azure_ssh_private_key" {
   type      = string
   sensitive = true
 }
-
 
 variable "vm_name" {
   default = "my-azure-vm01"
@@ -66,61 +65,66 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
-resource "azurerm_linux_virtual_machine" "vm" {
+resource "azurerm_virtual_machine" "vm" {
   name                  = var.vm_name
   location              = azurerm_resource_group.rg.location
   resource_group_name   = azurerm_resource_group.rg.name
   network_interface_ids = [azurerm_network_interface.nic.id]
-  size                  = "Standard_D2s_v3"
+  vm_size               = "Standard_D2s_v3"
 
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+  storage_os_disk {
+    name              = "${var.vm_name}-osdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
   }
 
-  source_image_reference {
+  storage_image_reference {
     publisher = "Canonical"
     offer     = "UbuntuServer"
     sku       = "18.04-LTS"
     version   = "latest"
   }
 
-  admin_username = var.admin_username
-
-  admin_ssh_key {
-    username   = var.admin_username
-    public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjXyNcW5rfXJ3RRTeae+swmAx43KGQPl0aPEHlYoQqLPJP+Ak6oe1mKI0OE5jhcXnix7LtRg+dLiyAqVx5KaV4UyPq+3627irW72KpBLWKpLDOU0wG9N0MvjOWFbqpQ6WJDZFG1W14Drsx0QvKY2FQ0MGC0FzXd3BK3XApRgToU+HJHYwme6JPVDmxhHr4z/Zmweh4TcFKoCk7E8X4o3i1aH0wssBqe0lH575/sk8vCrIvmcIw33Xa/nxdbS7nvWqqKqI/0hCr+mGlw8Y/HO8UnzNNyzaYRFh3TFAULD4uNP7swrVWrKbhXIxi7dVWnkiffIYIJCqJd/h3A/D+hy2Atg4JEImp5X/69Rrhn97d7FrstoPVSlOslhE3Kb4A1XMOSmkdE5Hhd3UbXGs20VtNBNmZPwlmCA709vlCAr3sj5zvUEB478ULnhCAcLxfrjX5TFqCCReFU3xRv4tgKrA6wZG6N0UFqedDo/QI/RQCgmUD8dIH0S7gvcPpfjysoKk= generated-by-azure"
+  os_profile {
+    computer_name  = var.vm_name
+    admin_username = var.admin_username
   }
 
+  os_profile_linux_config {
+    disable_password_authentication = true
 
-  
-}
+    ssh_keys {
+      path     = "/home/${var.admin_username}/.ssh/authorized_keys"
+      key_data = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjXyNcW5rfXJ3RRTeae+swmAx43KGQPl0aPEHlYoQqLPJP+Ak6oe1mKI0OE5jhcXnix7LtRg+dLiyAqVx5KaV4UyPq+3627irW72KpBLWKpLDOU0wG9N0MvjOWFbqpQ6WJDZFG1W14Drsx0QvKY2FQ0MGC0FzXd3BK3XApRgToU+HJHYwme6JPVDmxhHr4z/Zmweh4TcFKoCk7E8X4o3i1aH0wssBqe0lH575/sk8vCrIvmcIw33Xa/nxdbS7nvWqqKqI/0hCr+mGlw8Y/HO8UnzNNyzaYRFh3TFAULD4uNP7swrVWrKbhXIxi7dVWnkiffIYIJCqJd/h3A/D+hy2Atg4JEImp5X/69Rrhn97d7FrstoPVSlOslhE3Kb4A1XMOSmkdE5Hhd3UbXGs20VtNBNmZPwlmCA709vlCAr3sj5zvUEB478ULnhCAcLxfrjX5TFqCCReFU3xRv4tgKrA6wZG6N0UFqedDo/QI/RQCgmUD8dIH0S7gvcPpfjysoKk= generated-by-azure"
+    }
+  }
 
-provisioner "file" {
-  source      = "index.html"
-  destination = "/tmp/index.html"  # Use a temporary directory
-  connection {
-    type        = "ssh"
-    user        = var.admin_username
-    private_key = var.azure_ssh_private_key
-    host        = self.public_ip_address
+  provisioner "file" {
+    source      = "index.html"
+    destination = "/tmp/index.html"
+    connection {
+      type        = "ssh"
+      user        = var.admin_username
+      private_key = var.azure_ssh_private_key
+      host        = self.public_ip_address
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt update -y",
+      "sudo apt install -y apache2",
+      "sudo mv /tmp/index.html /var/www/html/index.html",
+      "sudo chown www-data:www-data /var/www/html/index.html",
+      "sudo systemctl start apache2",
+      "sudo systemctl enable apache2"
+    ]
+    connection {
+      type        = "ssh"
+      user        = var.admin_username
+      private_key = var.azure_ssh_private_key
+      host        = self.public_ip_address
+    }
   }
 }
-
-provisioner "remote-exec" {
-  inline = [
-    "sudo apt update -y",
-    "sudo apt install -y apache2",
-    "sudo mv /tmp/index.html /var/www/html/index.html",
-    "sudo chown www-data:www-data /var/www/html/index.html",
-    "sudo systemctl start apache2",
-    "sudo systemctl enable apache2"
-  ]
-  connection {
-    type        = "ssh"
-    user        = var.admin_username
-    private_key = var.azure_ssh_private_key
-    host        = self.public_ip_address
-  }
-}
-
