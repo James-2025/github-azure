@@ -40,7 +40,9 @@ jobs:
       env:
         TF_VAR_azure_ssh_private_key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}  # Reference the GitHub secret
 
-      run: terraform plan -out tfplan
+      run: 
+        terraform force-unlock be446297-c614-a3e6-de41-bbf82b90a1cf
+        terraform plan -out tfplan 
 
     - name: Apply Terraform deployment
-      run: terraform apply -auto-approve tfplan
+      run: terraform apply -auto-approve tfplan 
