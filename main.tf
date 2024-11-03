@@ -1,7 +1,7 @@
 terraform {
   backend "azurerm" {
-    resource_group_name   = "my-terraform-backend-rg"       # Update to your backend resource group
-    storage_account_name  = "mytfbackendstorage"            # Update to your backend storage account name
+    resource_group_name   = "my-terraform-rg"       # Update to your backend resource group
+    storage_account_name  = "tfbe"            # Update to your backend storage account name
     container_name        = "tfstate"                       # Update to your backend container name
     key                   = "terraform.tfstate"             # Name of the state file
   }
